@@ -1,44 +1,81 @@
-Trabalho Prático — Memória, E/S e GPU na Prática
-Disciplina: Organização e Arquitetura de Computadores  
-Curso: Sistemas de Informação
-Integrantes:
-Júlia Rodrigues da Rocha — RA: 25005897
-Giovana Budri Oliveira — RA: 25017683
+# 🖥️ Trabalho Prático — Memória, E/S e GPU na Prática
+
+**Disciplina:** Organização e Arquitetura de Computadores
+**Curso:** Sistemas de Informação
+
+## 👥 Integrantes
+
+| Nome                     | RA       |
+| ------------------------ | -------- |
+| Júlia Rodrigues da Rocha | 25005897 |
+| Giovana Budri Oliveira   | 25017683 |
+
 ---
-Sobre o trabalho
-Três atividades práticas e independentes cobrindo hierarquia de memória, armazenamento (E/S) e computação em GPU via WebGPU no navegador.
-Ambiente de execução:
-CPU: Intel Xeon @ 2,10 GHz (1 vCPU — VM Linux)
-RAM: 3,9 GiB
-SO: Ubuntu 24.04 · Linux 6.18.5 x86_64
-Armazenamento: disco virtual (vda), 252 GiB
-GPU: sem GPU dedicada na VM (Atividade 3 usa Chrome com GPU integrada)
+
+# 📖 Sobre o Trabalho
+
+Este projeto reúne **três atividades práticas independentes**, explorando conceitos fundamentais de:
+
+* 🧠 Hierarquia de Memória
+* 💾 Entrada e Saída (E/S) e Armazenamento
+* ⚡ Computação Paralela em GPU utilizando WebGPU
+
+## 🖥️ Ambiente de Execução
+
+| Componente          | Especificação                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------ |
+| CPU                 | Intel Xeon @ 2,10 GHz (1 vCPU – VM Linux)                                            |
+| RAM                 | 3,9 GiB                                                                              |
+| Sistema Operacional | Ubuntu 24.04                                                                         |
+| Kernel              | Linux 6.18.5 x86_64                                                                  |
+| Armazenamento       | Disco virtual (vda), 252 GiB                                                         |
+| GPU                 | Sem GPU dedicada na VM *(Atividade 3 executada via Chrome utilizando GPU integrada)* |
+
 ---
-Estrutura do repositório
-```
+
+# 📂 Estrutura do Repositório
+
+```text
 .
 ├── atividade1-cache/
-│   ├── cachebench.c       # Benchmark de hierarquia de memória (Saavedra-Barrera)
-│   ├── resultado.csv      # Saída real gerada pelo benchmark na VM
-│   └── plot_cache.py      # Script Python que gera o gráfico de latência
+│   ├── cachebench.c
+│   ├── resultado.csv
+│   └── plot_cache.py
 │
 ├── atividade2-fio/
-│   └── resultados_fio.txt # Saída completa dos dois cenários do fio
+│   └── resultados_fio.txt
 │
 ├── atividade3-webgpu/
-│   └── matrix_webgpu.html # Multiplicação de matrizes CPU vs GPU (WebGPU)
+│   └── matrix_webgpu.html
 │
 └── README.md
 ```
+
+### Descrição dos Arquivos
+
+| Arquivo              | Descrição                                                      |
+| -------------------- | -------------------------------------------------------------- |
+| `cachebench.c`       | Benchmark de hierarquia de memória baseado em Saavedra-Barrera |
+| `resultado.csv`      | Resultados reais coletados na VM                               |
+| `plot_cache.py`      | Geração do gráfico de latência                                 |
+| `resultados_fio.txt` | Resultados dos testes de armazenamento                         |
+| `matrix_webgpu.html` | Multiplicação de matrizes CPU vs GPU utilizando WebGPU         |
+
 ---
-Atividade 1 — Hierarquia de Memória
-Benchmark que percorre arrays de tamanhos crescentes com stride de 64 bytes (1 cache line) e mede a latência média de acesso, revelando os degraus de L1, L2, L3 e RAM.
-Pré-requisitos
+
+# 🧠 Atividade 1 — Hierarquia de Memória
+
+Benchmark que percorre vetores de tamanhos crescentes utilizando **stride de 64 bytes (1 cache line)** e mede a latência média de acesso, permitindo identificar os níveis de cache (**L1, L2, L3**) e a memória principal (**RAM**).
+
+## Pré-requisitos
+
 ```bash
 sudo apt install build-essential python3 python3-pip
 pip install matplotlib numpy
 ```
-Como rodar
+
+## Como Executar
+
 ```bash
 cd atividade1-cache
 
@@ -48,24 +85,59 @@ gcc -O2 -o cachebench cachebench.c
 # Executar e salvar resultado
 ./cachebench > resultado.csv
 
-# Gerar o gráfico
+# Gerar gráfico
 python3 plot_cache.py
-# → salva grafico_cache.png na mesma pasta
 ```
-Resultado esperado
-O gráfico deve mostrar pelo menos 3 patamares visíveis de latência correspondendo a L1, L2 e L3. Os tamanhos onde ocorrem os degraus devem bater com a saída de `lscpu`.
+
+O script gera automaticamente:
+
+```text
+grafico_cache.png
+```
+
+## Resultado Esperado
+
+O gráfico deve apresentar pelo menos **três patamares distintos de latência**, correspondentes aos caches:
+
+* L1
+* L2
+* L3
+
+Os pontos de transição devem ser compatíveis com as informações obtidas através do comando:
+
+```bash
+lscpu
+```
+
 ---
-Atividade 2 — E/S e Armazenamento
-Benchmark com `fio` comparando leitura sequencial (blocos de 1 MiB) e leitura aleatória (blocos de 4 KiB) em um arquivo de 1 GB, com `--direct=1` para desabilitar o page cache do kernel.
-Pré-requisitos
+
+# 💾 Atividade 2 — E/S e Armazenamento
+
+Benchmark realizado com a ferramenta `fio`, comparando:
+
+* 📈 Leitura Sequencial (blocos de 1 MiB)
+* 🎲 Leitura Aleatória (blocos de 4 KiB)
+
+Os testes utilizam:
+
+```text
+--direct=1
+```
+
+para desabilitar o page cache do sistema operacional.
+
+## Pré-requisitos
+
 ```bash
 sudo apt install fio
 ```
-Como rodar
+
+## Como Executar
+
 ```bash
 cd atividade2-fio
 
-# Criar arquivo de teste de 1 GB
+# Criar arquivo de teste (1 GB)
 fallocate -l 1G testfile
 
 # Leitura sequencial
@@ -74,27 +146,99 @@ fio --name=seqread --filename=testfile --rw=read --bs=1M --size=1G --direct=1 --
 # Leitura aleatória
 fio --name=randread --filename=testfile --rw=randread --bs=4k --size=1G --direct=1 --runtime=20 --time_based --iodepth=32
 
-# Remover arquivo de teste ao terminar
+# Remover arquivo de teste
 rm testfile
 ```
-> **Atenção:** sempre aponte `--filename` para um arquivo comum (`testfile`), **nunca** para `/dev/sda` ou similar — você pode apagar dados.
-Os resultados obtidos na VM estão documentados em `resultados_fio.txt`.
+
+> ⚠️ **Importante:** utilize sempre um arquivo comum como destino (`testfile`) e **nunca** dispositivos como `/dev/sda`, `/dev/vda` ou similares, pois isso pode causar perda de dados.
+
+Os resultados coletados durante a execução estão documentados em:
+
+```text
+resultados_fio.txt
+```
+
 ---
-Atividade 3 — GPU pelo Navegador (WebGPU)
-Multiplicação de matrizes quadradas em JavaScript puro (CPU) e compute shader WGSL (GPU), cronometrada com `performance.now()` + `await device.queue.onSubmittedWorkDone()`.
-Pré-requisitos
-Chrome 113+ / Edge / Safari 18+
-No console do navegador (F12): `await navigator.gpu.requestAdapter()` deve retornar um objeto
-Como rodar
-Abra o arquivo `atividade3-webgpu/matrix_webgpu.html` diretamente no Chrome
-Abra o console (F12 → Console)
-Os três testes (128×128, 512×512, 1024×1024) rodam automaticamente ao carregar a página
-Os tempos e speedups aparecem no console e na própria página
-Resultados obtidos (Chrome 124, GPU integrada Intel Iris Xe)
-Tamanho	CPU (ms)	GPU (ms)	Speedup
-128×128	0,8	1,2	0,67× (CPU mais rápida)
-512×512	42,5	3,8	11,2×
-1024×1024	680	12,5	54,4×
+
+# ⚡ Atividade 3 — GPU pelo Navegador (WebGPU)
+
+Implementação de multiplicação de matrizes quadradas utilizando:
+
+* CPU (JavaScript puro)
+* GPU (Compute Shader WGSL)
+
+A medição de desempenho é realizada com:
+
+```javascript
+performance.now()
+await device.queue.onSubmittedWorkDone()
+```
+
+## Pré-requisitos
+
+* Google Chrome 113+
+* Microsoft Edge
+* Safari 18+
+
+Verifique o suporte ao WebGPU executando no console do navegador:
+
+```javascript
+await navigator.gpu.requestAdapter()
+```
+
+O comando deve retornar um objeto válido.
+
+## Como Executar
+
+1. Abra o arquivo:
+
+```text
+atividade3-webgpu/matrix_webgpu.html
+```
+
+2. Abra o Console do navegador (`F12 → Console`).
+
+3. Os testes serão executados automaticamente para:
+
+* 128 × 128
+* 512 × 512
+* 1024 × 1024
+
+4. Os resultados serão exibidos:
+
+   * No console
+   * Na própria página
+
+## Resultados Obtidos
+
+**Ambiente:** Chrome 124 + GPU Integrada Intel Iris Xe
+
+| Tamanho   | CPU (ms) | GPU (ms) | Speedup                   |
+| --------- | -------- | -------- | ------------------------- |
+| 128×128   | 0,8      | 1,2      | 0,67× *(CPU mais rápida)* |
+| 512×512   | 42,5     | 3,8      | 11,2×                     |
+| 1024×1024 | 680      | 12,5     | 54,4×                     |
+
+### Análise
+
+Para matrizes pequenas, o custo de preparação e transferência de dados para a GPU pode superar os ganhos de paralelismo. Entretanto, à medida que o tamanho da matriz cresce, a GPU passa a explorar seu paralelismo massivo, alcançando acelerações superiores a **50×** em relação à CPU.
+
 ---
-Ferramentas de IA utilizadas
-Claude Sonnet 4.6 (Anthropic) — auxílio na execução do benchmark, geração dos gráficos, montagem do documento e revisão dos comentários analíticos.
+
+# 🤖 Ferramentas de IA Utilizadas
+
+| Ferramenta                    | Finalidade                                                                                                                 |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Claude Sonnet 4.6 (Anthropic) | Auxílio na execução dos benchmarks, geração dos gráficos, organização da documentação e revisão dos comentários analíticos |
+
+---
+
+# ✅ Conclusão
+
+As três atividades permitiram observar, na prática:
+
+* O impacto da hierarquia de memória sobre a latência de acesso.
+* As diferenças de desempenho entre padrões de leitura sequencial e aleatória em dispositivos de armazenamento.
+* Os ganhos expressivos obtidos ao utilizar processamento paralelo em GPU para cargas computacionais intensivas.
+
+O conjunto de experimentos complementa os conceitos estudados em Organização e Arquitetura de Computadores, demonstrando sua aplicação em cenários reais de execução.
