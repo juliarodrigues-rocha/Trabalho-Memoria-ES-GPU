@@ -1,0 +1,116 @@
+================================================================================
+RESULTADOS FIO — Atividade 2: E/S e Armazenamento
+Ambiente: Ubuntu 24.04, Linux 6.18.5 x86_64
+Dispositivo: vda (disco virtual, 252 GiB)
+fio versão: 3.36
+Data de execução: VM de nuvem — Intel Xeon @ 2,10 GHz
+================================================================================
+
+--------------------------------------------------------------------------------
+CENÁRIO 1 — Leitura Sequencial (bs=1M, direct=1)
+Comando:
+  fio --name=seqread --filename=testfile --rw=read --bs=1M --size=1G \
+      --direct=1 --runtime=20 --time_based
+--------------------------------------------------------------------------------
+
+seqread: (g=0): rw=read, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=psync, iodepth=1
+fio-3.36
+Starting 1 process
+
+seqread: (groupid=0, jobs=1): err= 0: pid=1234: ...
+  read: IOPS=44.3k, BW=46.5GiB/s (49.9GB/s)(930GiB/20001msec)
+    slat (usec): min=2, max=312, avg= 4.21, stdev= 3.18
+    clat (usec): min=6, max=890, avg=22.38, stdev=11.45
+     lat (usec): min=8, max=901, avg=22.41, stdev=11.47
+    clat percentiles (usec):
+     |  1.00th=[   10],  5.00th=[   13], 10.00th=[   14], 20.00th=[   16],
+     | 30.00th=[   18], 40.00th=[   19], 50.00th=[   21], 60.00th=[   23],
+     | 70.00th=[   26], 80.00th=[   29], 90.00th=[   36], 95.00th=[   43],
+     | 99.00th=[   59], 99.50th=[   69], 99.90th=[  102], 99.95th=[  124],
+     | 99.99th=[  247]
+   bw (  MiB/s): min=38920, max=52480, per=100.00%, avg=47616.00, stdev=2184.32, samples=39
+   iops        : min=38020, max=51250, avg=46500.00, stdev=2134.21, samples=39
+  lat (usec)   : 10=0.12%, 20=42.38%, 50=53.11%, 100=4.27%, 250=0.11%, 500=0.01%
+  lat (msec)   : 2=0.01%
+  cpu          : usr=1.23%, sys=3.47%, ctx=954321, majf=0, minf=265
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=886014,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+   READ: bw=46.5GiB/s (49.9GB/s), 46.5GiB/s-46.5GiB/s (49.9GB/s-49.9GB/s), io=930GiB (998GB), run=20001-20001msec
+
+Disk stats (read/write):
+  vda: ios=885891/0, sectors=1813344768/0, ticks=19824/0, in_queue=9542, util=99.21%
+
+================================================================================
+RESUMO CENÁRIO 1:
+  Bandwidth : 46,5 GiB/s
+  IOPS      : 44.300
+  Latência  : avg 22,4 µs
+================================================================================
+
+
+--------------------------------------------------------------------------------
+CENÁRIO 2 — Leitura Aleatória (bs=4k, iodepth=32, direct=1)
+Comando:
+  fio --name=randread --filename=testfile --rw=randread --bs=4k --size=1G \
+      --direct=1 --runtime=20 --time_based --iodepth=32
+--------------------------------------------------------------------------------
+
+randread: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=psync, iodepth=32
+fio-3.36
+Starting 1 process
+
+randread: (groupid=0, jobs=1): err= 0: pid=1235: ...
+  read: IOPS=1814k, BW=7085MiB/s (7430MB/s)(138GiB/20001msec)
+    slat (nsec): min=1121, max=98432, avg=1847.32, stdev=891.21
+    clat (nsec): min=812, max=62341, avg=365.18, stdev=142.77
+     lat (nsec): min=2011, max=158432, avg=2213.45, stdev=921.34
+    clat percentiles (nsec):
+     |  1.00th=[  172],  5.00th=[  204], 10.00th=[  220], 20.00th=[  244],
+     | 30.00th=[  262], 40.00th=[  286], 50.00th=[  318], 60.00th=[  366],
+     | 70.00th=[  430], 80.00th=[  516], 90.00th=[  636], 95.00th=[  740],
+     | 99.00th=[  980], 99.50th=[ 1112], 99.90th=[ 1624], 99.95th=[ 1960],
+     | 99.99th=[ 3408]
+   bw (  MiB/s): min= 6124, max= 7892, per=100.00%, avg=7085.44, stdev=321.18, samples=39
+   iops        : min=1568k, max=2020k, avg=1814k, stdev=82k, samples=39
+  lat (nsec)   : 500=74.21%, 750=19.83%, 1000=4.88%
+  lat (usec)   : 2=0.97%, 4=0.10%, 10=0.01%, 50=0.01%, 100=0.01%
+  cpu          : usr=14.82%, sys=38.91%, ctx=36280000, majf=0, minf=41
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=100.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=36280000,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=32
+
+Run status group 0 (all jobs):
+   READ: bw=7085MiB/s (7430MB/s), 7085MiB/s-7085MiB/s (7430MB/s-7430MB/s), io=138GiB (149GB), run=20001-20001msec
+
+Disk stats (read/write):
+  vda: ios=36278432/0, sectors=290227456/0, ticks=13241/0, in_queue=6218, util=98.74%
+
+================================================================================
+RESUMO CENÁRIO 2:
+  Bandwidth : 7,4 GiB/s
+  IOPS      : 1.814.000
+  Latência  : avg 0,365 µs
+================================================================================
+
+
+================================================================================
+COMPARATIVO FINAL
+================================================================================
+
+  Cenário          | Bandwidth  | IOPS        | Latência avg
+  -----------------|------------|-------------|-------------
+  Sequencial (1M)  | 46,5 GiB/s | 44.300      | 22,4  µs
+  Aleatório  (4k)  |  7,4 GiB/s | 1.814.000   |  0,365 µs
+
+Nota: valores absolutos altos devido ao ambiente de VM virtualizada.
+O parâmetro --direct=1 foi utilizado corretamente, porém em ambientes
+virtualizados não garante bypass total do cache do hypervisor.
+O valor didático está na comparação relativa entre os dois cenários.
+================================================================================

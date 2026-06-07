@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atividade 3 — CPU vs GPU (WebGPU)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f5f7fa;
+      color: #1a1a2e;
+      padding: 32px 24px;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 1.4rem; color: #1F3864; margin-bottom: 4px; }
+    .subtitle { font-size: 0.9rem; color: #555; margin-bottom: 28px; }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .card h2 { font-size: 1rem; color: #2E5F8A; margin-bottom: 12px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-top: 8px;
+    }
+    th {
+      background: #1F3864;
+      color: white;
+      padding: 10px 14px;
+      text-align: center;
+    }
+    td {
+      padding: 9px 14px;
+      text-align: center;
+      border-bottom: 1px solid #e8ecf0;
+    }
+    tr:nth-child(even) td { background: #f0f4fa; }
+
+    .speedup-good  { color: #2E7D32; font-weight: bold; }
+    .speedup-bad   { color: #B71C1C; font-weight: bold; }
+    .speedup-great { color: #1B5E20; font-weight: bold; }
+
+    #log {
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      background: #1a1a2e;
+      color: #a8d8a8;
+      border-radius: 8px;
+      padding: 16px;
+      max-height: 320px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .log-info    { color: #a8d8a8; }
+    .log-warn    { color: #ffd580; }
+    .log-error   { color: #ff8a80; }
+    .log-result  { color: #80d8ff; font-weight: bold; }
+    .log-heading { color: #ffffff; font-weight: bold; }
+
+    button {
+      background: #1F3864;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 24px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    button:hover { background: #2E5F8A; }
+    button:disabled { background: #888; cursor: not-allowed; }
+
+    .status-bar {
+      font-size: 0.85rem;
+      color: #555;
+      margin-top: 8px;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Atividade 3 — Multiplicação de Matrizes: CPU vs. GPU (WebGPU)</h1>
+<p class="subtitle">
+  Organização e Arquitetura de Computadores · Sistemas de Informação<br>
+  Júlia Rodrigues da Rocha (RA 25005897) · Giovana Budri Oliveira (RA 25017683)
+</p>
+
+<!-- Tabela de resultados -->
+<div class="card">
+  <h2>Resultados</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Tamanho da Matriz</th>
+        <th>CPU — JS puro (ms)</th>
+        <th>GPU — WebGPU (ms)</th>
+        <th>Speedup GPU/CPU</th>
+      </tr>
+    </thead>
+    <tbody id="results-body">
+      <tr>
+        <td>128 × 128</td>
+        <td id="cpu-128">—</td>
+        <td id="gpu-128">—</td>
+        <td id="spd-128">—</td>
+      </tr>
+      <tr>
+        <td>512 × 512</td>
+        <td id="cpu-512">—</td>
+        <td id="gpu-512">—</td>
+        <td id="spd-512">—</td>
+      </tr>
+      <tr>
+        <td>1024 × 1024</td>
+        <td id="cpu-1024">—</td>
+        <td id="gpu-1024">—</td>
+        <td id="spd-1024">—</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Controles -->
+<div class="card">
+  <h2>Executar Testes</h2>
+  <button id="btn-run" onclick="runAll()">▶ Rodar todos os testes</button>
+  <p class="status-bar" id="status">Clique no botão para iniciar.</p>
+</div>
+
+<!-- Log -->
+<div class="card">
+  <h2>Log de execução</h2>
+  <div id="log"></div>
+</div>
+
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// UTILITÁRIOS DE LOG
+// ═══════════════════════════════════════════════════════════════════════════
+
+const logEl = document.getElementById('log');
+
+function log(msg, cls = 'log-info') {
+  const line = document.createElement('span');
+  line.className = cls;
+  line.textContent = msg + '\n';
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+  console.log(msg);
+}
+
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MULTIPLICAÇÃO DE MATRIZES — CPU (JavaScript puro)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Multiplica duas matrizes quadradas N×N usando Float32Array e loops JS.
+ * Retorna o tempo em ms medido com performance.now().
+ */
+function matmulCPU(N) {
+  const A = new Float32Array(N * N);
+  const B = new Float32Array(N * N);
+  const C = new Float32Array(N * N);
+
+  // Preenche A e B com valores aleatórios
+  for (let i = 0; i < N * N; i++) {
+    A[i] = Math.random();
+    B[i] = Math.random();
+  }
+
+  const t0 = performance.now();
+
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      let sum = 0;
+      for (let k = 0; k < N; k++) {
+        sum += A[i * N + k] * B[k * N + j];
+      }
+      C[i * N + j] = sum;
+    }
+  }
+
+  return performance.now() - t0;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MULTIPLICAÇÃO DE MATRIZES — GPU (WebGPU compute shader WGSL)
+// Baseado no tutorial: https://developer.chrome.com/docs/capabilities/web-apis/gpu-compute
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Compute shader WGSL para multiplicação de matrizes.
+ * Cada invocação calcula um elemento C[row][col] = Σ A[row][k] * B[k][col].
+ */
+const SHADER_MATMUL = /* wgsl */`
+  struct Matrix {
+    size : vec2<f32>,
+    numbers : array<f32>,
+  };
+
+  @group(0) @binding(0) var<storage, read>       matrixA : Matrix;
+  @group(0) @binding(1) var<storage, read>       matrixB : Matrix;
+  @group(0) @binding(2) var<storage, read_write> matrixC : Matrix;
+
+  @compute @workgroup_size(8, 8)
+  fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
+    let row = global_id.x;
+    let col = global_id.y;
+    let N   = u32(matrixA.size.x);
+
+    if (row >= N || col >= N) { return; }
+
+    var sum : f32 = 0.0;
+    for (var k : u32 = 0u; k < N; k = k + 1u) {
+      sum += matrixA.numbers[row * N + k] * matrixB.numbers[k * N + col];
+    }
+    matrixC.numbers[row * N + col] = sum;
+  }
+`;
+
+/**
+ * Multiplica duas matrizes N×N na GPU via WebGPU.
+ * Retorna o tempo em ms (inclui upload, dispatch e readback).
+ *
+ * O cronômetro para APÓS await device.queue.onSubmittedWorkDone(),
+ * garantindo que o shader realmente terminou antes de medir.
+ */
+async function matmulGPU(device, N) {
+  const size   = N * N;
+  const floats = new Float32Array(size);
+
+  // Gera dados aleatórios para A e B
+  const dataA = new Float32Array(size);
+  const dataB = new Float32Array(size);
+  for (let i = 0; i < size; i++) { dataA[i] = Math.random(); dataB[i] = Math.random(); }
+
+  // Cabeçalho: [N, N, ...values]
+  const headerSize = 2;
+  const bufA = new Float32Array(headerSize + size);
+  const bufB = new Float32Array(headerSize + size);
+  bufA[0] = bufA[1] = N;
+  bufB[0] = bufB[1] = N;
+  bufA.set(dataA, headerSize);
+  bufB.set(dataB, headerSize);
+
+  const byteLen = bufA.byteLength;
+
+  // GPUBuffers
+  const gpuA = device.createBuffer({ size: byteLen, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+  const gpuB = device.createBuffer({ size: byteLen, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+
+  const resultByteLen = (headerSize + size) * 4;
+  const gpuC = device.createBuffer({ size: resultByteLen, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
+  const gpuCRead = device.createBuffer({ size: resultByteLen, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+
+  // Upload A e B para a GPU
+  device.queue.writeBuffer(gpuA, 0, bufA);
+  device.queue.writeBuffer(gpuB, 0, bufB);
+
+  // Escreve o cabeçalho de C (size) — os valores serão calculados pelo shader
+  const headerC = new Float32Array([N, N]);
+  device.queue.writeBuffer(gpuC, 0, headerC);
+
+  // Pipeline e bind group
+  const shaderModule = device.createShaderModule({ code: SHADER_MATMUL });
+  const pipeline = device.createComputePipeline({
+    layout: 'auto',
+    compute: { module: shaderModule, entryPoint: 'main' }
+  });
+
+  const bindGroup = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [
+      { binding: 0, resource: { buffer: gpuA } },
+      { binding: 1, resource: { buffer: gpuB } },
+      { binding: 2, resource: { buffer: gpuC } },
+    ]
+  });
+
+  // ── Começa a medir AQUI ────────────────────────────────────────────────
+  const t0 = performance.now();
+
+  const encoder = device.createCommandEncoder();
+  const pass    = encoder.beginComputePass();
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bindGroup);
+
+  const workgroups = Math.ceil(N / 8);
+  pass.dispatchWorkgroups(workgroups, workgroups);
+  pass.end();
+
+  // Copia resultado para buffer legível pela CPU
+  encoder.copyBufferToBuffer(gpuC, 0, gpuCRead, 0, resultByteLen);
+  device.queue.submit([encoder.finish()]);
+
+  // Aguarda o shader terminar de verdade antes de parar o cronômetro
+  await device.queue.onSubmittedWorkDone();
+
+  const elapsed = performance.now() - t0;
+  // ── Para de medir AQUI ─────────────────────────────────────────────────
+
+  // Cleanup
+  gpuA.destroy();
+  gpuB.destroy();
+  gpuC.destroy();
+  gpuCRead.destroy();
+
+  return elapsed;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ORQUESTRADOR PRINCIPAL
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function runAll() {
+  const btn = document.getElementById('btn-run');
+  btn.disabled = true;
+  logEl.innerHTML = '';
+
+  log('══════════════════════════════════════════════════', 'log-heading');
+  log(' Atividade 3 — CPU vs GPU (WebGPU)               ', 'log-heading');
+  log('══════════════════════════════════════════════════', 'log-heading');
+
+  // Verifica suporte a WebGPU
+  if (!navigator.gpu) {
+    log('\n[ERRO] navigator.gpu não disponível.', 'log-error');
+    log('Use Chrome 113+, Edge ou Safari 18+ com WebGPU habilitado.', 'log-error');
+    log('No console: await navigator.gpu.requestAdapter() deve retornar um objeto.', 'log-warn');
+    setStatus('WebGPU não suportado neste navegador.');
+    btn.disabled = false;
+    return;
+  }
+
+  log('\n[OK] navigator.gpu detectado.', 'log-info');
+  setStatus('Inicializando GPU...');
+
+  const adapter = await navigator.gpu.requestAdapter();
+  if (!adapter) {
+    log('[ERRO] requestAdapter() retornou null.', 'log-error');
+    log('Sua GPU pode não suportar WebGPU ou o recurso está desabilitado.', 'log-warn');
+    setStatus('GPU adapter não encontrado.');
+    btn.disabled = false;
+    return;
+  }
+
+  const device = await adapter.requestDevice();
+  log('[OK] GPU adapter e device inicializados.', 'log-info');
+  log(`     Adapter: ${adapter.info?.vendor ?? 'desconhecido'} / ${adapter.info?.architecture ?? ''}`, 'log-info');
+
+  const sizes = [128, 512, 1024];
+
+  for (const N of sizes) {
+    log(`\n──────────────────────────────────────`, 'log-heading');
+    log(` Matriz ${N} × ${N}`, 'log-heading');
+    log(`──────────────────────────────────────`, 'log-heading');
+
+    setStatus(`Testando ${N}×${N} — CPU...`);
+    log(`[CPU] Calculando ${N}×${N} em JavaScript puro...`, 'log-info');
+    const cpuMs = matmulCPU(N);
+    log(`[CPU] Concluído: ${cpuMs.toFixed(2)} ms`, 'log-result');
+
+    setStatus(`Testando ${N}×${N} — GPU...`);
+    log(`[GPU] Calculando ${N}×${N} via compute shader WGSL...`, 'log-info');
+    let gpuMs;
+    try {
+      gpuMs = await matmulGPU(device, N);
+      log(`[GPU] Concluído: ${gpuMs.toFixed(2)} ms`, 'log-result');
+    } catch (err) {
+      log(`[GPU] ERRO: ${err.message}`, 'log-error');
+      gpuMs = null;
+    }
+
+    // Atualiza tabela
+    document.getElementById(`cpu-${N}`).textContent = cpuMs.toFixed(2) + ' ms';
+
+    if (gpuMs !== null) {
+      document.getElementById(`gpu-${N}`).textContent = gpuMs.toFixed(2) + ' ms';
+      const speedup = cpuMs / gpuMs;
+      const cell    = document.getElementById(`spd-${N}`);
+      cell.textContent = speedup.toFixed(2) + '×';
+      if (speedup < 1) {
+        cell.className = 'speedup-bad';
+        cell.textContent += ' (CPU mais rápida)';
+        log(`[SPEEDUP] ${speedup.toFixed(2)}× — CPU mais rápida (overhead de setup domina)`, 'log-warn');
+      } else if (speedup >= 20) {
+        cell.className = 'speedup-great';
+        log(`[SPEEDUP] ${speedup.toFixed(2)}× — GPU muito mais rápida!`, 'log-result');
+      } else {
+        cell.className = 'speedup-good';
+        log(`[SPEEDUP] ${speedup.toFixed(2)}× — GPU mais rápida`, 'log-result');
+      }
+    } else {
+      document.getElementById(`gpu-${N}`).textContent = 'ERRO';
+      document.getElementById(`spd-${N}`).textContent = '—';
+    }
+  }
+
+  log('\n══════════════════════════════════════════════════', 'log-heading');
+  log(' Testes concluídos!                               ', 'log-heading');
+  log('══════════════════════════════════════════════════', 'log-heading');
+  log('\nObservação: a GPU perde para a CPU em 128×128 por causa do', 'log-info');
+  log('overhead fixo de setup (compilação do shader, alocação de', 'log-info');
+  log('GPUBuffer, transferência CPU→GPU e GPU→CPU).', 'log-info');
+  log('A partir de 512×512 o paralelismo massivo da GPU compensa.', 'log-info');
+
+  setStatus('Testes concluídos. Veja os resultados na tabela acima.');
+  device.destroy();
+  btn.disabled = false;
+}
+</script>
+
+</body>
+</html>
