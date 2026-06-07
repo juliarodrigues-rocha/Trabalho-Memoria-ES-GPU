@@ -1,6 +1,7 @@
 # 🖥️ Trabalho Prático — Memória, E/S e GPU na Prática
 
 **Disciplina:** Organização e Arquitetura de Computadores
+
 **Curso:** Sistemas de Informação
 
 ## 👥 Integrantes
